@@ -28,12 +28,14 @@ issue summarising the previous week's gravitational-wave papers on arXiv:
 3. `journal_club digest finalize` checks the digest against the fetched papers:
    an arXiv ID that was not fetched stops the run, and any paper the digest left
    out is listed at the end.
-4. A separate job opens the issue.
+4. A separate job opens the issue and closes the open digests for earlier weeks,
+   so the open digest is always the latest one.
 
-A backup run on Tuesday builds the same week. If Monday's issue exists it stops
-before Claude runs, so it uses no Claude usage on a normal week. A manual run on
-any day builds the digest of that day's week, and is skipped the same way if the
-issue already exists.
+A backup run on Tuesday builds the same week. If Monday's digest is open it
+stops before Claude runs, so it uses no Claude usage on a normal week. A manual
+run on any day builds the digest of that day's week, and is skipped the same way
+if that week's digest is open. To rebuild a week, close its digest first; a
+digest for a past week never closes a newer one.
 
 To change what the digest covers, edit the categories and keywords in
 `src/journal_club/digest/relevance.py`; both sources use them. To change how it

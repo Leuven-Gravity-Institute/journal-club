@@ -5,7 +5,13 @@ from __future__ import annotations
 import pytest
 from builders import make_paper
 
-from journal_club.digest.issue import MAX_ISSUE_BODY, DigestRejectedError, build_issue_body, cited_ids
+from journal_club.digest.issue import (
+    MAX_ISSUE_BODY,
+    DigestRejectedError,
+    build_issue_body,
+    cited_ids,
+    superseded_issues,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -96,3 +102,47 @@ class TestBuildIssueBody:
     def test_an_empty_week_with_a_digest_is_published(self) -> None:
         """The workflow skips empty weeks, but the function itself has nothing to append."""
         assert build_issue_body([], "Nothing this week.\n") == "Nothing this week.\n"
+
+
+class TestSupersededIssues:
+    """Which open digests a new one closes, so that only the latest stays open."""
+
+    NEW = "Paper digest: 2026-10-09 to 2026-10-15"
+
+    def test_open_digests_for_earlier_weeks_are_closed_oldest_first(self) -> None:
+        """The usual Monday: last week's digest (and any older one left open) is closed."""
+        issues = [
+            {"number": 12, "title": "Paper digest: 2026-10-02 to 2026-10-08"},
+            {"number": 9, "title": "Paper digest: 2026-09-25 to 2026-10-01"},
+            {"number": 13, "title": self.NEW},
+        ]
+        assert superseded_issues(issues, self.NEW) == [9, 12]
+
+    def test_a_later_week_stays_open(self) -> None:
+        """A manual run for a past week must not close the current digest."""
+        issues = [{"number": 20, "title": "Paper digest: 2026-10-16 to 2026-10-22"}]
+        assert superseded_issues(issues, self.NEW) == []
+
+    def test_the_same_week_is_not_closed(self) -> None:
+        """The new digest itself, or a duplicate of its week, is left for a person to sort out."""
+        issues = [{"number": 13, "title": self.NEW}, {"number": 14, "title": self.NEW}]
+        assert superseded_issues(issues, self.NEW) == []
+
+    def test_issues_that_are_not_digests_are_ignored(self) -> None:
+        """A renamed digest or an unrelated issue is never closed by the workflow."""
+        issues = [
+            {"number": 4, "title": "Paper digest: 2026-10-02 to 2026-10-08 (old layout)"},
+            {"number": 6, "title": "Bug: fetch fails"},
+        ]
+        assert superseded_issues(issues, self.NEW) == []
+
+    def test_numbers_given_as_strings_are_accepted(self) -> None:
+        """`gh` returns numbers, but the function should not care how they were serialised."""
+        assert superseded_issues([{"number": "12", "title": "Paper digest: 2026-10-02 to 2026-10-08"}], self.NEW) == [
+            12
+        ]
+
+    def test_a_new_title_that_is_not_a_digest_is_refused(self) -> None:
+        """Comparing against an unreadable title would close nothing or everything; refuse instead."""
+        with pytest.raises(ValueError, match="not a digest title"):
+            superseded_issues([], "Paper digest: soon")

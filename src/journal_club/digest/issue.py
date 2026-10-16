@@ -10,6 +10,7 @@ import re
 from collections.abc import Iterable
 
 from journal_club.digest.paper import Paper
+from journal_club.digest.window import Window
 
 #: GitHub refuses an issue body longer than this many characters.
 MAX_ISSUE_BODY = 65536
@@ -78,3 +79,31 @@ def build_issue_body(papers: Iterable[Paper], digest: str, *, note: str | None =
     if len(body) > MAX_ISSUE_BODY:
         raise DigestRejectedError(f"the issue body is {len(body)} characters; GitHub accepts at most {MAX_ISSUE_BODY}")
     return body
+
+
+def superseded_issues(open_issues: Iterable[dict], title: str) -> list[int]:
+    """Return the open digest issues that the digest titled *title* supersedes.
+
+    A digest supersedes those for earlier weeks only. Comparing weeks rather than creation order means a
+    manual run for a past week does not close the current digest, and a duplicate for the same week is
+    left for a person to sort out.
+
+    Args:
+        open_issues: The open issues, as ``gh issue list --json number,title`` returns them.
+        title: The new digest's title.
+
+    Returns:
+        The issue numbers to close, oldest week first.
+
+    Raises:
+        ValueError: If *title* is not a digest title.
+    """
+    new = Window.from_title(title)
+    if new is None:
+        raise ValueError(f"{title!r} is not a digest title")
+    older = []
+    for issue in open_issues:
+        window = Window.from_title(issue["title"])
+        if window is not None and window.first < new.first:
+            older.append((window.first, int(issue["number"])))
+    return [number for _, number in sorted(older)]

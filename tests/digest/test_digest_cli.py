@@ -206,6 +206,45 @@ class TestFinalize:
         assert not out.exists()
 
 
+class TestSuperseded:
+    """`journal_club digest superseded`."""
+
+    def test_the_older_open_digests_are_printed_one_per_line(self, tmp_path) -> None:
+        """The workflow closes each number it prints."""
+        issues = tmp_path / "open.json"
+        issues.write_text(
+            json.dumps(
+                [
+                    {"number": 12, "title": "Paper digest: 2026-10-02 to 2026-10-08"},
+                    {"number": 9, "title": "Paper digest: 2026-09-25 to 2026-10-01"},
+                    {"number": 13, "title": "Paper digest: 2026-10-09 to 2026-10-15"},
+                    {"number": 6, "title": "Bug: fetch fails"},
+                ]
+            ),
+            encoding="utf-8",
+        )
+        args = ["digest", "superseded", "--title", "Paper digest: 2026-10-09 to 2026-10-15", "--issues", str(issues)]
+        result = runner.invoke(app, args)
+        assert result.exit_code == 0, result.output
+        assert result.output == "9\n12\n"
+
+    def test_nothing_to_close_prints_nothing(self, tmp_path) -> None:
+        """The first digest, or a run for a past week, closes nothing."""
+        issues = tmp_path / "open.json"
+        issues.write_text("[]", encoding="utf-8")
+        args = ["digest", "superseded", "--title", "Paper digest: 2026-10-09 to 2026-10-15", "--issues", str(issues)]
+        result = runner.invoke(app, args)
+        assert result.exit_code == 0
+        assert result.output == ""
+
+    def test_a_title_that_is_not_a_digest_is_a_usage_error(self, tmp_path) -> None:
+        """A broken title must fail the step rather than close the wrong issues."""
+        issues = tmp_path / "open.json"
+        issues.write_text("[]", encoding="utf-8")
+        result = runner.invoke(app, ["digest", "superseded", "--title", "Hello", "--issues", str(issues)])
+        assert result.exit_code == 2
+
+
 def test_the_digest_group_is_listed_in_the_help() -> None:
     """The top-level help shows the command the workflow calls."""
     result = runner.invoke(app, ["--help"])

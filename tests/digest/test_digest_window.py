@@ -61,3 +61,35 @@ class TestWindow:
     def test_the_title_names_both_ends(self) -> None:
         """The title is what the workflow uses to avoid opening a second issue for the same week."""
         assert Window(dt.date(2026, 10, 9), dt.date(2026, 10, 15)).title == "Paper digest: 2026-10-09 to 2026-10-15"
+
+
+class TestFromTitle:
+    """Reading the window back from an issue title, to find the digests a new one supersedes."""
+
+    @pytest.mark.parametrize("weeks", range(-3, 4))
+    def test_the_title_round_trips(self, weeks: int) -> None:
+        """`from_title` is the inverse of `title`, whatever the week."""
+        window = Window.for_run(dt.date(2026, 10, 19) + dt.timedelta(weeks=weeks))
+        assert Window.from_title(window.title) == window
+
+    def test_surrounding_whitespace_is_ignored(self) -> None:
+        """A title pasted with a stray space still names its week."""
+        assert Window.from_title(" Paper digest: 2026-10-09 to 2026-10-15 \n") == Window(
+            dt.date(2026, 10, 9), dt.date(2026, 10, 15)
+        )
+
+    @pytest.mark.parametrize(
+        "title",
+        [
+            "Paper digest: 2026-10-02 to 2026-10-08 (old layout)",
+            "Re: Paper digest: 2026-10-02 to 2026-10-08",
+            "Paper digest: 2026-10-02",
+            "Paper digest: 2026-13-02 to 2026-13-08",
+            "Paper digest: 2026-10-08 to 2026-10-02",
+            "Bug: fetch fails",
+            "",
+        ],
+    )
+    def test_other_titles_are_not_digests(self, title: str) -> None:
+        """A renamed digest, another issue, an impossible date or a reversed week is left alone."""
+        assert Window.from_title(title) is None

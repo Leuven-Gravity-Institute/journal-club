@@ -132,3 +132,31 @@ def finalize_command(
         raise typer.Exit(code=2) from error
     out.write_text(body, encoding="utf-8")
     logger.info("Wrote the issue body for %r to %s", weekly.window.title, out)
+
+
+@digest_app.command("superseded")
+def superseded_command(
+    title: Annotated[str, typer.Option("--title", help="The title of the digest just published.")],
+    issues: Annotated[
+        Path, typer.Option("--issues", help="The open issues, from `gh issue list --json number,title`.")
+    ],
+) -> None:
+    """Print the numbers of the open digest issues for earlier weeks, one per line, oldest first.
+
+    Args:
+        title: The title of the digest just published.
+        issues: The open issues, from ``gh issue list --json number,title``.
+
+    Raises:
+        BadParameter: If *title* is not a digest title.
+    """
+    import json
+
+    from journal_club.digest.issue import superseded_issues
+
+    try:
+        numbers = superseded_issues(json.loads(issues.read_text(encoding="utf-8")), title)
+    except ValueError as error:
+        raise typer.BadParameter(str(error), param_hint="--title") from error
+    for number in numbers:
+        typer.echo(number)
