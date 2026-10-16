@@ -1,5 +1,5 @@
 # ruff: noqa PL0415
-"""Main entry point for the python_package_template CLI application."""
+"""Main entry point for the journal_club CLI application."""
 
 from __future__ import annotations
 
@@ -22,8 +22,8 @@ class LoggingLevel(str, enum.Enum):
 
 # Create the main Typer app
 app = typer.Typer(
-    name="package_name",
-    help="Main CLI for package_name.",
+    name="journal_club",
+    help="Tooling for the journal club.",
     rich_markup_mode="rich",
 )
 
@@ -39,7 +39,7 @@ def setup_logging(level: LoggingLevel = LoggingLevel.INFO) -> None:
     from rich.console import Console
     from rich.logging import RichHandler
 
-    logger = logging.getLogger("python_package_template")
+    logger = logging.getLogger("journal_club")
 
     logger.setLevel(level.value)
 
@@ -84,9 +84,9 @@ def main(
 
 def register_commands() -> None:
     """Register CLI commands."""
-    from python_package_template.cli.hello import hello_command
+    from journal_club.cli.digest import digest_app
 
-    app.command(name="hello")(hello_command)
+    app.add_typer(digest_app, name="digest")
 
 
 register_commands()

@@ -1,8 +1,8 @@
 # Using this GitHub template
 
 This section is for people who created a repository from the
-[python-package-template](https://github.com/isaac-cf-wong/python-package-template)
-on GitHub. It covers the first steps after the fork.
+[journal-club](https://github.com/Leuven-Gravity-Institute/journal-club) on
+GitHub. It covers the first steps after the fork.
 
 The rest of the template’s explanations (tooling, CI, packaging, and
 troubleshooting) sit alongside this folder under
