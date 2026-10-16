@@ -69,10 +69,11 @@ def build_issue_body(papers: Iterable[Paper], digest: str, *, note: str | None =
     body = digest.rstrip() + "\n"
     missing = [paper for paper in papers if paper.arxiv_id not in cited]
     if missing:
-        lines = [f"- [{paper.title}]({paper.url}) ({paper.arxiv_id})" for paper in missing]
-        body += "\n## Also this week\n\n" + "\n".join(lines) + "\n"
+        lines = [f"- [{paper.title}]({paper.url})" for paper in missing]
+        body += "\n## 📎 Also this week\n\n" + "\n".join(lines) + "\n"
     if note:
-        body += f"\n---\n\n_{note}_\n"
+        # A GitHub alert, so the caveat stands out from the digest above it.
+        body += f"\n> [!NOTE]\n> {note}\n"
     body = _MENTION.sub("@\u200b", body)
     if len(body) > MAX_ISSUE_BODY:
         raise DigestRejectedError(f"the issue body is {len(body)} characters; GitHub accepts at most {MAX_ISSUE_BODY}")
