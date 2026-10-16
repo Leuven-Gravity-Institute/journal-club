@@ -45,9 +45,7 @@ class TestBuildIssueBody:
         """The issue always lists the whole week, even when the summary skipped a paper."""
         papers = [make_paper("2610.00001"), make_paper("2610.00002", title="Missed")]
         body = build_issue_body(papers, "About 2610.00001.\n")
-        assert body == (
-            "About 2610.00001.\n\n## Also this week\n\n- [Missed](https://arxiv.org/abs/2610.00002) (2610.00002)\n"
-        )
+        assert body == ("About 2610.00001.\n\n## 📎 Also this week\n\n- [Missed](https://arxiv.org/abs/2610.00002)\n")
 
     def test_an_id_that_was_not_fetched_stops_the_digest(self) -> None:
         """An invented or out-of-window paper is never published, even alongside real ones."""
@@ -87,7 +85,7 @@ class TestBuildIssueBody:
         """The fallback note is the last thing a reader sees, set apart from the digest."""
         papers = [make_paper("2610.00001"), make_paper("2610.00002", title="Missed")]
         body = build_issue_body(papers, "About 2610.00001.\n", note="From the fallback.")
-        assert body.endswith("(2610.00002)\n\n---\n\n_From the fallback._\n")
+        assert body.endswith("(https://arxiv.org/abs/2610.00002)\n\n> [!NOTE]\n> From the fallback.\n")
 
     def test_the_note_counts_towards_the_limit(self) -> None:
         """A digest that fits only without the note is still refused, rather than truncated by GitHub."""

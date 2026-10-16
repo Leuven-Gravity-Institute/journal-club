@@ -187,7 +187,7 @@ class TestFinalize:
         _write_week(papers, "INSPIRE-HEP")
         result, out = self._finalize(tmp_path, papers, "2610.00001 is great.\n")
         assert result.exit_code == 0, result.output
-        assert out.read_text(encoding="utf-8") == f"2610.00001 is great.\n\n---\n\n_{FALLBACK_NOTE}_\n"
+        assert out.read_text(encoding="utf-8") == f"2610.00001 is great.\n\n> [!NOTE]\n> {FALLBACK_NOTE}\n"
 
     def test_a_missing_digest_fails(self, tmp_path) -> None:
         """If Claude wrote nothing, nothing is published."""
