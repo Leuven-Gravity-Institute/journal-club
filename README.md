@@ -39,12 +39,14 @@ To change what the digest covers, edit the categories and keywords in
 `src/journal_club/digest/relevance.py`; both sources use them. To change how it
 is written, edit the prompt.
 
-**Setup.** Run `claude setup-token` and store the token as the repository secret
-`CLAUDE_CODE_OAUTH_TOKEN`. Runs count against that Claude account's usage, so
-only that account (set in the workflow's `if` conditions) can start or re-run it
-by hand: Actions → Weekly Paper Digest → Run workflow, optionally for a past
-date, or `gh workflow run paper_digest.yml`. Runs started by anyone else are
-skipped before any paper is fetched.
+**Setup.** Run `claude setup-token` and store the token as the secret
+`CLAUDE_CODE_OAUTH_TOKEN` of the `paper-digest` environment (Settings →
+Environments), which only `main` may deploy to. Do not keep it as a repository
+secret: workflows on any branch can read those. Runs count against that Claude
+account's usage, so only that account (set in the workflow's `if` conditions)
+can start or re-run it by hand: Actions → Weekly Paper Digest → Run workflow,
+optionally for a past date, or `gh workflow run paper_digest.yml`. Runs started
+by anyone else are skipped before any paper is fetched.
 
 **Locally.**
 

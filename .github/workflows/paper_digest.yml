@@ -14,11 +14,13 @@ name: Weekly Paper Digest
 # over the size limit in `src/journal_club/digest/paper.py`, and the summarise
 # job has no checkout, so that file and the prompt are all there is to read.
 #
-# Setup: run `claude setup-token` and store the token as the repository secret
-# CLAUDE_CODE_OAUTH_TOKEN. The runs count against that Claude account's usage,
-# so only that account may start or re-run the workflow by hand (see the `if`
-# on the `fetch` and `summarise` jobs). Manual runs need the workflow on the
-# default branch: Actions -> Weekly Paper Digest -> Run workflow, or
+# Setup: run `claude setup-token` and store the token as the secret
+# CLAUDE_CODE_OAUTH_TOKEN of the `paper-digest` environment, which only `main`
+# may deploy to (Settings -> Environments), not as a repository secret. The
+# runs count against that Claude account's usage, so only that account may
+# start or re-run the workflow by hand (see the `if` on the `fetch` and
+# `summarise` jobs). Manual runs need the workflow on the default branch:
+# Actions -> Weekly Paper Digest -> Run workflow, or
 # `gh workflow run paper_digest.yml`.
 
 on:
@@ -129,6 +131,9 @@ jobs:
             needs.fetch.outputs.count > 0 && (github.triggering_actor ==
             'isaac-cf-wong' || (github.event_name == 'schedule' &&
             github.run_attempt == 1))
+        # The token is an environment secret that only `main` may deploy to,
+        # so a modified copy of this workflow on another branch cannot read it.
+        environment: paper-digest
         runs-on: ubuntu-latest
         timeout-minutes: 20
         permissions:
