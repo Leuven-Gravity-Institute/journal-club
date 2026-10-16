@@ -7,8 +7,11 @@ name: Weekly Paper Digest
 # is published.
 #
 # Tuesday's run is a backup: it builds the same week as Monday's, and stops
-# before Claude runs if Monday's issue already exists, so it costs nothing on a
+# before Claude runs if Monday's issue is already open, so it costs nothing on a
 # normal week.
+#
+# Only the latest digest stays open: publishing a digest closes the open digests
+# for earlier weeks. Closing a digest therefore lets its week be built again.
 #
 # What Claude can read is gated twice: `fetch` refuses to write a papers file
 # over the size limit in `src/journal_club/digest/paper.py`, and the summarise
@@ -82,7 +85,7 @@ jobs:
                     ${RUN_DATE:+--run-date "$RUN_DATE"})
                   echo "title=$title" >> "$GITHUB_OUTPUT"
 
-            - name: Skip a week that already has its issue
+            - name: Skip a week whose digest is open
               id: existing
               env:
                   GH_TOKEN: ${{ github.token }}
@@ -90,10 +93,11 @@ jobs:
                   TITLE: ${{ steps.week.outputs.title }}
               run: |
                   set -euo pipefail
-                  count=$(gh issue list --state all --search "\"$TITLE\" in:title" \
+                  count=$(gh issue list --state open --author app/github-actions \
+                    --search "\"$TITLE\" in:title" \
                     --json title --jq "map(select(.title == env.TITLE)) | length")
                   if [ "$count" != "0" ]; then
-                    echo "'$TITLE' already exists; nothing to do."
+                    echo "'$TITLE' is already open; nothing to do."
                     echo "exists=true" >> "$GITHUB_OUTPUT"
                   else
                     echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -204,6 +208,7 @@ jobs:
                   issue.md
 
             - name: Open the digest issue
+              id: open
               env:
                   GH_TOKEN: ${{ github.token }}
                   GH_REPO: ${{ github.repository }}
@@ -212,10 +217,32 @@ jobs:
                   set -euo pipefail
                   # Checked again here: another run may have published the week
                   # while this one was summarising.
-                  existing=$(gh issue list --state all --search "\"$TITLE\" in:title" \
+                  existing=$(gh issue list --state open --author app/github-actions \
+                    --search "\"$TITLE\" in:title" \
                     --json title --jq "map(select(.title == env.TITLE)) | length")
                   if [ "$existing" != "0" ]; then
-                    echo "An issue titled '$TITLE' already exists; not opening another."
+                    echo "'$TITLE' is already open; not opening another."
                     exit 0
                   fi
-                  gh issue create --title "$TITLE" --body-file issue.md
+                  url=$(gh issue create --title "$TITLE" --body-file issue.md)
+                  echo "Opened $url"
+                  echo "number=${url##*/}" >> "$GITHUB_OUTPUT"
+
+            - name: Close the digests it supersedes
+              if: steps.open.outputs.number != ''
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  GH_REPO: ${{ github.repository }}
+                  TITLE: ${{ needs.fetch.outputs.title }}
+                  NEW: ${{ steps.open.outputs.number }}
+              run: |
+                  set -euo pipefail
+                  # Only digests for earlier weeks: a manual run for a past week
+                  # must not close the current digest.
+                  gh issue list --state open --author app/github-actions \
+                    --search '"Paper digest:" in:title' --limit 200 \
+                    --json number,title > open-digests.json
+                  for number in $(uv run --frozen --no-sync journal_club digest \
+                    superseded --title "$TITLE" --issues open-digests.json); do
+                    gh issue close "$number" --comment "Superseded by #$NEW."
+                  done

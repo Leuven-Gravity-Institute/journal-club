@@ -14,12 +14,16 @@ manual re-run) builds the same digest as Monday's, with the same issue title.
 from __future__ import annotations
 
 import datetime as dt
+import re
 from dataclasses import dataclass
 
 #: Full days between the last day of the window and the week's Monday, so every paper has been announced.
 LAG_DAYS = 3
 #: Days in a window.
 WINDOW_DAYS = 7
+
+#: The issue title of a window, as :attr:`Window.title` writes it.
+_TITLE = re.compile(r"^Paper digest: (\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})$")
 
 
 @dataclass(frozen=True)
@@ -62,3 +66,21 @@ class Window:
     def title(self) -> str:
         """The title of the digest issue for this window."""
         return f"Paper digest: {self.first.isoformat()} to {self.last.isoformat()}"
+
+    @classmethod
+    def from_title(cls, title: str) -> Window | None:
+        """Return the window a digest issue's *title* names, the inverse of :attr:`title`.
+
+        Args:
+            title: An issue title.
+
+        Returns:
+            The window, or None if *title* is not a digest title: another issue, or one renamed by hand.
+        """
+        matched = _TITLE.match(title.strip())
+        if matched is None:
+            return None
+        try:
+            return cls(first=dt.date.fromisoformat(matched[1]), last=dt.date.fromisoformat(matched[2]))
+        except ValueError:
+            return None
