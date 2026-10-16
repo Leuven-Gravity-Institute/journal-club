@@ -51,6 +51,9 @@ WEAK_GW_PHRASES = (
     r"compact[- ](binary|binaries)",
 )
 
+#: How many different weak terms make a match without gravity named.
+WEAK_TERMS_NEEDED = 2
+
 #: Gravity named outright, which turns a single weak term into a match.
 GRAVITY_NAMED = r"\bgravit(ational|ons?)\b"
 
@@ -91,4 +94,4 @@ def is_gravitational_wave(paper: Paper) -> bool:
     if _GW_PHRASE.search(text) or _GW_ACRONYM.search(text):
         return True
     weak = sum(1 for phrase in _WEAK_GW_PHRASES if phrase.search(text))
-    return weak >= 2 or (weak == 1 and _GRAVITY_NAMED.search(text) is not None)
+    return weak >= WEAK_TERMS_NEEDED or (weak == 1 and _GRAVITY_NAMED.search(text) is not None)

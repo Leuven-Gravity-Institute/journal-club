@@ -46,7 +46,7 @@ Follow this template exactly, replacing the angle-bracketed parts. Leave a blank
 line after every `<summary>` line and before every `</details>` line, or GitHub
 will not render the list inside.
 
-```markdown
+```text
 ## 🗞️ This week
 
 - **<N> papers**, <one short clause on where most of them were>.
@@ -54,7 +54,7 @@ will not render the list inside.
 
 ## ⭐ Highlights
 
-### <topic emoji> [<title>](url)
+### <topic emoji> [<title>](<url>)
 
 **<first author>**<" et al." if author_count > 1> · <topic name>
 
@@ -71,9 +71,8 @@ will not render the list inside.
 <details>
 <summary><topic emoji> <topic name> (<count>)</summary>
 
-- [<title>](url)
-- [<title>](url) — <short note, only if the title does not make the subject
-  clear>
+- [<title>](<url>)
+- [<title>](<url>) — <short note, only if the title does not make the subject clear>
 
 </details>
 
