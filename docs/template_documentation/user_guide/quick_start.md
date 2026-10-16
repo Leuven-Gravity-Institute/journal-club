@@ -34,20 +34,20 @@ uv run zensical serve
 The template exposes a Typer application:
 
 ```bash
-uv run python_package_template --help
+uv run journal_club --help
 ```
 
 You can also run the package as a module:
 
 ```bash
-uv run python -m python_package_template
+uv run python -m journal_club
 ```
 
 ## Layout reminder
 
-Application code lives under `src/python_package_template/`. Tests live in
-`tests/`. Markdown sources for this site live in `docs/`, and the site
-configuration is in `zensical.toml`.
+Application code lives under `src/journal_club/`. Tests live in `tests/`.
+Markdown sources for this site live in `docs/`, and the site configuration is in
+`zensical.toml`.
 
 ## Going further
 

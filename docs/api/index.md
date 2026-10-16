@@ -1,19 +1,12 @@
 ---
 title: API Reference
-description: Complete reference for the python package template.
+description: Complete reference for the journal_club package.
 icon: material/api
 ---
 
-This section documents the public API of the python package template.
-
-<!-- prettier-ignore-start -->
-
-!!!notes
-    The pages only serve for demonstration purposes.
-
-<!-- prettier-ignore-end -->
+This section documents the public API of the `journal_club` package.
 
 ## Main Sections
 
-- **[Hello World](hello_world)** – Hello world functions.
+- **[Paper digest](digest)** – The weekly paper digest.
 - **[Utility](utils)** – Utility functions.

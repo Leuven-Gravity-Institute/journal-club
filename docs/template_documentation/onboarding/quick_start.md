@@ -53,8 +53,8 @@ terminal).
 ## 6. Next steps
 
 Follow [Customize and clean up](customize_repository.md) to rename
-`python_package_template`, update metadata, and remove
-**`docs/template_documentation/`** when you no longer need the template guides.
+`journal_club`, update metadata, and remove **`docs/template_documentation/`**
+when you no longer need the template guides.
 
 Commit messages and **pull request titles** should follow
 [Conventional Commits](https://www.conventionalcommits.org/) so

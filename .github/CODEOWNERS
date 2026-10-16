@@ -1,0 +1,10 @@
+# The weekly paper digest runs on the token owner's Claude usage, and these
+# files decide what it fetches, what Claude reads and what gets published.
+# Changes to them need the token owner's review.
+/.github/workflows/paper_digest.yml @isaac-cf-wong
+/.github/paper-digest/ @isaac-cf-wong
+/src/journal_club/digest/ @isaac-cf-wong
+/src/journal_club/cli/digest.py @isaac-cf-wong
+
+# Ownership itself, so it cannot be removed without the same review.
+/.github/CODEOWNERS @isaac-cf-wong

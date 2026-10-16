@@ -187,7 +187,7 @@ def test_main_function(sample_data):
 
 ### Renaming the Package
 
-1. Rename `src/python_package_template/` to `src/your_package_name/`
+1. Rename `src/journal_club/` to `src/your_package_name/`
 2. Update all imports throughout the codebase
 3. Update `pyproject.toml` name and entry points
 4. Update `zensical.toml` and documentation references

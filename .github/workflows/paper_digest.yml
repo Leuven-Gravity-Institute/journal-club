@@ -1,0 +1,217 @@
+name: Weekly Paper Digest
+
+# Every Monday, opens one issue summarising the past week's gravitational-wave
+# papers on arXiv. `journal_club digest fetch` decides which papers there are
+# (from the arXiv API, or from INSPIRE-HEP when arXiv is unavailable); Claude
+# only summarises them, and the result is checked against that list before it
+# is published.
+#
+# Tuesday's run is a backup: it builds the same week as Monday's, and stops
+# before Claude runs if Monday's issue already exists, so it costs nothing on a
+# normal week.
+#
+# What Claude can read is gated twice: `fetch` refuses to write a papers file
+# over the size limit in `src/journal_club/digest/paper.py`, and the summarise
+# job has no checkout, so that file and the prompt are all there is to read.
+#
+# Setup: run `claude setup-token` and store the token as the secret
+# CLAUDE_CODE_OAUTH_TOKEN of the `paper-digest` environment, which only `main`
+# may deploy to (Settings -> Environments), not as a repository secret. The
+# runs count against that Claude account's usage, so only that account may
+# start or re-run the workflow by hand (see the `if` on the `fetch` and
+# `summarise` jobs). Manual runs need the workflow on the default branch:
+# Actions -> Weekly Paper Digest -> Run workflow, or
+# `gh workflow run paper_digest.yml`.
+
+on:
+    schedule:
+        - cron: '0 7 * * 1'
+        - cron: '0 7 * * 2'
+    workflow_dispatch:
+        inputs:
+            run_date:
+                description:
+                    'Build the digest as if run on this UTC date (YYYY-MM-DD).
+                    Empty means today.'
+                required: false
+                default: ''
+                type: string
+
+permissions: {}
+
+concurrency:
+    group: paper-digest
+    cancel-in-progress: false
+
+jobs:
+    fetch:
+        # Runs only on the schedule's own first attempt, or when started (or
+        # re-run) by the account whose Claude usage pays for it. Re-runs of a
+        # scheduled run by anyone else are refused too.
+        if: >-
+            github.triggering_actor == 'isaac-cf-wong' || (github.event_name ==
+            'schedule' && github.run_attempt == 1)
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        permissions:
+            contents: read
+            issues: read
+        outputs:
+            title: ${{ steps.week.outputs.title }}
+            count: ${{ steps.fetch.outputs.count }}
+        steps:
+            - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+              with:
+                  persist-credentials: false
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+              with:
+                  python-version: '3.13'
+
+            - name: Install the package
+              run: uv sync --frozen --no-dev
+
+            - name: Work out the week's issue title
+              id: week
+              env:
+                  RUN_DATE: ${{ inputs.run_date }}
+              run: |
+                  set -euo pipefail
+                  title=$(uv run --frozen --no-sync journal_club digest title \
+                    ${RUN_DATE:+--run-date "$RUN_DATE"})
+                  echo "title=$title" >> "$GITHUB_OUTPUT"
+
+            - name: Skip a week that already has its issue
+              id: existing
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  GH_REPO: ${{ github.repository }}
+                  TITLE: ${{ steps.week.outputs.title }}
+              run: |
+                  set -euo pipefail
+                  count=$(gh issue list --state all --search "\"$TITLE\" in:title" \
+                    --json title --jq "map(select(.title == env.TITLE)) | length")
+                  if [ "$count" != "0" ]; then
+                    echo "'$TITLE' already exists; nothing to do."
+                    echo "exists=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "exists=false" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - name: Fetch the week's papers
+              id: fetch
+              if: steps.existing.outputs.exists == 'false'
+              env:
+                  RUN_DATE: ${{ inputs.run_date }}
+              run: |
+                  set -euo pipefail
+                  mkdir handoff
+                  uv run --frozen --no-sync journal_club digest fetch \
+                    --out handoff/papers.json ${RUN_DATE:+--run-date "$RUN_DATE"}
+                  cp .github/paper-digest/prompt.md handoff/prompt.md
+                  echo "count=$(jq '.papers | length' handoff/papers.json)" >> "$GITHUB_OUTPUT"
+
+            - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+              if: steps.fetch.outputs.count > 0
+              with:
+                  name: digest-input
+                  path: handoff/
+                  if-no-files-found: error
+                  retention-days: 30
+
+    summarise:
+        # Claude reads untrusted abstracts, so this job has no checkout and no
+        # write access: the papers file and the prompt are all it can read, and
+        # digest.md is all it can write.
+        needs: fetch
+        # The same check as `fetch`, repeated because this job holds the token
+        # and a single job can be re-run on its own.
+        if: >-
+            needs.fetch.outputs.count > 0 && (github.triggering_actor ==
+            'isaac-cf-wong' || (github.event_name == 'schedule' &&
+            github.run_attempt == 1))
+        # The token is an environment secret that only `main` may deploy to,
+        # so a modified copy of this workflow on another branch cannot read it.
+        environment: paper-digest
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        permissions:
+            contents: read
+        steps:
+            - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+              with:
+                  name: digest-input
+
+            - name: Summarise with Claude
+              uses: anthropics/claude-code-action@374f254f5efaf968abfe15d399fd90972e8138b9 # v1.0.251
+              with:
+                  claude_code_oauth_token:
+                      ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+                  github_token: ${{ github.token }}
+                  prompt: Read prompt.md and follow it exactly.
+                  claude_args: >-
+                      --model claude-sonnet-5-5 --max-turns 15 --allowedTools
+                      Read(./prompt.md),Read(./papers.json),Write(./digest.md)
+                      --disallowedTools
+                      Bash,Edit,Glob,Grep,LS,NotebookEdit,Task,WebFetch,WebSearch
+
+            - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+              with:
+                  name: digest-output
+                  path: digest.md
+                  if-no-files-found: error
+                  retention-days: 30
+
+    publish:
+        needs: [fetch, summarise]
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+            issues: write
+        steps:
+            - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+              with:
+                  persist-credentials: false
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+              with:
+                  python-version: '3.13'
+
+            - name: Install the package
+              run: uv sync --frozen --no-dev
+
+            - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+              with:
+                  name: digest-input
+                  path: handoff
+
+            - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+              with:
+                  name: digest-output
+                  path: handoff
+
+            - name: Check the digest against the fetched papers
+              run:
+                  uv run --frozen --no-sync journal_club digest finalize
+                  --papers handoff/papers.json --digest handoff/digest.md --out
+                  issue.md
+
+            - name: Open the digest issue
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  GH_REPO: ${{ github.repository }}
+                  TITLE: ${{ needs.fetch.outputs.title }}
+              run: |
+                  set -euo pipefail
+                  # Checked again here: another run may have published the week
+                  # while this one was summarising.
+                  existing=$(gh issue list --state all --search "\"$TITLE\" in:title" \
+                    --json title --jq "map(select(.title == env.TITLE)) | length")
+                  if [ "$existing" != "0" ]; then
+                    echo "An issue titled '$TITLE' already exists; not opening another."
+                    exit 0
+                  fi
+                  gh issue create --title "$TITLE" --body-file issue.md

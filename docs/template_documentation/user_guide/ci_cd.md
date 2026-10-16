@@ -148,7 +148,7 @@ them the update step still runs but PR creation is skipped.
 ### Repository URL in `cliff.toml`
 
 Replace the `<REPO>` substitution in `cliff.toml` (the `postprocessors` entry
-that points at `https://github.com/isaac-cf-wong/python-package-template`) with
+that points at `https://github.com/Leuven-Gravity-Institute/journal-club`) with
 your own GitHub URL so changelog links resolve.
 
 ### Conventional commits

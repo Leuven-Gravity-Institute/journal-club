@@ -5,10 +5,9 @@ your package and publishing setup.
 
 ## Rename the Python package
 
-1. Rename the directory `src/python_package_template/` to
-   `src/your_package_name/`.
-2. Replace imports and string references to `python_package_template` across
-   `src/`, `tests/`, and `docs/`.
+1. Rename the directory `src/journal_club/` to `src/your_package_name/`.
+2. Replace imports and string references to `journal_club` across `src/`,
+   `tests/`, and `docs/`.
 3. In `pyproject.toml`, update `[project] name`, `[project.scripts]`, and any
    URLs under `[project.urls]`.
 4. In `zensical.toml`, set `site_name`, `site_description`, and optionally

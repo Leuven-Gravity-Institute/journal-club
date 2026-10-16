@@ -1,7 +1,7 @@
 # Installation
 
 We recommend [uv](https://docs.astral.sh/uv/) to create environments and sync
-dependencies for **python_package_template**.
+dependencies for **journal_club**.
 
 ## Requirements
 
@@ -11,8 +11,8 @@ dependencies for **python_package_template**.
 ## Install from a checkout (recommended)
 
 ```bash
-git clone https://github.com/isaac-cf-wong/python-package-template.git
-cd python-package-template
+git clone https://github.com/Leuven-Gravity-Institute/journal-club.git
+cd journal-club
 
 uv sync --extra dev --extra docs --extra test
 ```
@@ -36,26 +36,26 @@ point at placeholder metadata. If a published distribution exists for your use
 case:
 
 ```bash
-uv pip install python_package_template
+uv pip install journal_club
 ```
 
 Optional extras:
 
 ```bash
-uv pip install "python_package_template[dev]"
-uv pip install "python_package_template[docs]"
+uv pip install "journal_club[dev]"
+uv pip install "journal_club[docs]"
 ```
 
 ## Verify the CLI
 
 ```bash
-uv run python_package_template --help
+uv run journal_club --help
 ```
 
 Or import the package:
 
 ```bash
-uv run python -c "import python_package_template; print(python_package_template.__version__)"
+uv run python -c "import journal_club; print(journal_club.__version__)"
 ```
 
 ## Core runtime dependency
@@ -65,4 +65,4 @@ uv run python -c "import python_package_template; print(python_package_template.
 ## Getting help
 
 1. [Troubleshooting](../development/troubleshooting.md)
-2. [Issues](https://github.com/isaac-cf-wong/python-package-template/issues)
+2. [Issues](https://github.com/Leuven-Gravity-Institute/journal-club/issues)

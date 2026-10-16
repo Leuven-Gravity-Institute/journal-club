@@ -66,8 +66,7 @@ uv pip install "your-package[dev,docs]"
 --8<-- "pyproject.toml:38:39"
 ```
 
-Defines command-line scripts. This creates the `python_package_template`
-command.
+Defines command-line scripts. This creates the `journal_club` command.
 
 ### URLs
 
