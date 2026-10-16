@@ -150,11 +150,15 @@ jobs:
                       ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
                   github_token: ${{ github.token }}
                   prompt: Read prompt.md and follow it exactly.
+                  # File writes are checked against `Edit(...)` rules only: a
+                  # `Write(path)` rule is never consulted, and denying `Edit`
+                  # blocks the Write tool too. The empty workspace is what keeps
+                  # Claude away from everything else.
                   claude_args: >-
                       --model claude-sonnet-5-5 --max-turns 15 --allowedTools
-                      Read(./prompt.md),Read(./papers.json),Write(./digest.md)
+                      Read(./prompt.md),Read(./papers.json),Edit(./digest.md)
                       --disallowedTools
-                      Bash,Edit,Glob,Grep,LS,NotebookEdit,Task,WebFetch,WebSearch
+                      Bash,Glob,Grep,LS,NotebookEdit,Task,WebFetch,WebSearch
 
             - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
               with:
