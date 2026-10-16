@@ -14,8 +14,13 @@ from journal_club.digest.paper import Paper
 #: GitHub refuses an issue body longer than this many characters.
 MAX_ISSUE_BODY = 65536
 
-#: A new-style arXiv identifier, optionally versioned. Only new-style IDs can appear in a recent window.
-_ARXIV_ID = re.compile(r"\b(\d{4}\.\d{4,5})(?:v\d+)?\b")
+#: An arXiv identifier, optionally versioned: new-style (``2610.01234``) or legacy (``gr-qc/0507014``,
+#: ``math.GT/0309136``). Only new-style IDs can be fetched for a recent window, but a legacy one must still be
+#: recognised, or a digest citing an older paper would get past the check. Legacy numbers are ``YYMMNNN``
+#: from 1991 to 2007, which keeps paths such as ``src/1234567`` from counting.
+_ARXIV_ID = re.compile(
+    r"\b(\d{4}\.\d{4,5}|[a-z]+(?:-[a-z]+)?(?:\.[A-Z]{2})?/(?:9[1-9]|0[0-7])(?:0[1-9]|1[0-2])\d{3})(?:v\d+)?\b"
+)
 #: An @-mention. Abstracts are untrusted text, and a digest that quoted ``@someone`` would ping them.
 _MENTION = re.compile(r"@(?=[\w-])")
 

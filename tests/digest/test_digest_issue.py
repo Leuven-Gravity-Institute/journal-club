@@ -20,6 +20,11 @@ class TestCitedIds:
             ("see 2610.01234v3", {"2610.01234"}),
             ("[x](https://arxiv.org/abs/2610.01234v1)", {"2610.01234"}),
             ("old-style 0704.1234 and 5-digit 2610.12345", {"0704.1234", "2610.12345"}),
+            ("legacy gr-qc/0507014", {"gr-qc/0507014"}),
+            ("legacy astro-ph/0612345v3, versioned", {"astro-ph/0612345"}),
+            ("subject class math.GT/0309136", {"math.GT/0309136"}),
+            ("https://arxiv.org/abs/hep-th/9711200v2", {"hep-th/9711200"}),
+            ("a ratio 3/1234567 or a path src/1234567", set()),
             ("no IDs, 3.14159 or 12345.6789", set()),
         ],
     )
@@ -48,6 +53,11 @@ class TestBuildIssueBody:
         """An invented or out-of-window paper is never published, even alongside real ones."""
         with pytest.raises(DigestRejectedError, match=r"not fetched: 2610\.99999"):
             build_issue_body([make_paper("2610.00001")], "2610.00001 and 2610.99999v3")
+
+    def test_a_legacy_id_that_was_not_fetched_stops_the_digest(self) -> None:
+        """Every paper in a recent window has a new-style ID, so any legacy one was not fetched."""
+        with pytest.raises(DigestRejectedError, match=r"not fetched: gr-qc/0507014"):
+            build_issue_body([make_paper("2610.00001")], "2610.00001 builds on gr-qc/0507014v2.")
 
     @pytest.mark.parametrize("digest", ["", " \n\t"])
     def test_an_empty_digest_stops_the_digest(self, digest: str) -> None:
